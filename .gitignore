@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+fan_profile.db
+secrets.toml
+.streamlit/secrets.toml
