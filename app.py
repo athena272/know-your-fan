@@ -1,40 +1,20 @@
 import streamlit as st
-import sqlite3
+from supabase import create_client
 import pytesseract
 from PIL import Image
 import openai
 import requests
 from bs4 import BeautifulSoup
-# import tweepy  # se usar
+import tweepy
 
 # --- CONFIGURAÇÕES INICIAIS ---
 openai.api_key = st.secrets["OPENAI_API_KEY"]
-conn = sqlite3.connect("fan_profile.db", check_same_thread=False)
-c = conn.cursor()
-c.execute("""
-CREATE TABLE IF NOT EXISTS user (
-    id INTEGER PRIMARY KEY,
-    nome TEXT,
-    cpf TEXT,
-    endereco TEXT,
-    interesses TEXT,
-    compras_eventos TEXT
-)""")
-c.execute("""
-CREATE TABLE IF NOT EXISTS docs (
-    user_id INTEGER, tipo TEXT, resultado TEXT
-)""")
-c.execute("""
-CREATE TABLE IF NOT EXISTS social (
-    user_id INTEGER, plataforma TEXT, dados TEXT
-)""")
-c.execute("""
-CREATE TABLE IF NOT EXISTS links (
-    user_id INTEGER, url TEXT, relevancia TEXT
-)""")
-conn.commit()
 
-st.title("Know Your Fan")
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]  # use aqui a service_role key
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+st.title("Know Your Fan — Protótipo Mínimo Viável")
 
 # --- 1. COLETA DE DADOS BÁSICOS ---
 with st.form("dados_basicos"):
@@ -45,18 +25,24 @@ with st.form("dados_basicos"):
     compras_eventos = st.text_area("Compras e eventos que participou (último ano)")
     ok = st.form_submit_button("Salvar dados")
     if ok:
-        c.execute("INSERT INTO user (nome,cpf,endereco,interesses,compras_eventos) VALUES (?,?,?,?,?)",
-                  (nome,cpf,endereco,interesses,compras_eventos))
-        conn.commit()
-        st.success("Dados salvos!")
+        res = supabase.table("user").insert({
+            "nome": nome,
+            "cpf": cpf,
+            "endereco": endereco,
+            "interesses": interesses,
+            "compras_eventos": compras_eventos
+        }).execute()
+        if res.error:
+            st.error("Erro ao salvar dados: " + res.error.message)
+        else:
+            st.success("Dados salvos no Supabase!")
 
-# --- 2. UPLOAD E VALIDAÇÃO de documento ---
+# --- 2. UPLOAD E VALIDAÇÃO DE DOCUMENTO ---
 st.header("Validação de Identidade")
 doc = st.file_uploader("Envie foto do RG/CNH", type=["png","jpg","jpeg"])
 if doc:
     img = Image.open(doc)
     text = pytesseract.image_to_string(img, lang="por")
-    # Chama GPT para validar
     prompt = (
         f"Extraí este texto de um documento de identidade:\n\n"
         f"{text}\n\n"
@@ -64,28 +50,38 @@ if doc:
         "Responda sucintamente se os dados batem e, se não, quais divergências."
     )
     resp = openai.ChatCompletion.create(
-        model="gpt-4o-mini", messages=[{"role":"user","content":prompt}]
+        model="gpt-4o-mini",
+        messages=[{"role":"user","content":prompt}]
     )
     resultado = resp.choices[0].message.content
-    c.execute("INSERT INTO docs VALUES (?,?,?)", (1, "rg", resultado))
-    conn.commit()
+    supabase.table("docs").insert({
+        "user_id": 1,
+        "tipo": "rg",
+        "resultado": resultado
+    }).execute()
     st.write("**Resultado da validação:**", resultado)
 
-# --- 3. INTEGRAÇÃO COM TWITTER (exemplo) ---
+# --- 3. INTEGRAÇÃO COM TWITTER ---
 st.header("Redes Sociais")
 twitter = st.text_input("Digite seu @ do Twitter (sem @)")
 if st.button("Buscar tweets"):
-    # autenticação simples (exigir chaves no secrets.toml)
     client = tweepy.Client(bearer_token=st.secrets["TW_BEARER"])
-    tweets = client.get_users_tweets(id=client.get_user(username=twitter).data.id, max_results=50)
-    relevantes = [t.text for t in tweets.data if "FURIA" in t.text.upper()]
-    c.execute("INSERT INTO social VALUES (?,?,?)", (1, "twitter", "\n".join(relevantes)))
-    conn.commit()
-    st.write("Tweets citando FURIA:", relevantes)
+    user = client.get_user(username=twitter)
+    if user.data:
+        tweets = client.get_users_tweets(id=user.data.id, max_results=50)
+        relevantes = [t.text for t in tweets.data if "FURIA" in t.text.upper()]
+        supabase.table("social").insert({
+            "user_id": 1,
+            "plataforma": "twitter",
+            "dados": "\n".join(relevantes)
+        }).execute()
+        st.write("Tweets citando FURIA:", relevantes)
+    else:
+        st.error("Usuário não encontrado.")
 
-# --- 4. VALIDAÇÃO DE LINKS de sites de e-sports ---
+# --- 4. VALIDAÇÃO DE LINKS DE SITES DE E-SPORTS ---
 st.header("Perfis em Sites de e-sports")
-url = st.text_input("Cole aqui o link do seu perfil (ex: liquipedia.net/…)")
+url = st.text_input("Cole aqui o link do seu perfil (ex: liquipedia.net/…)") 
 if st.button("Validar link"):
     r = requests.get(url)
     soup = BeautifulSoup(r.text, "html.parser")
@@ -96,9 +92,13 @@ if st.button("Validar link"):
         f"\n\n---\n{texto}"
     )
     resp2 = openai.ChatCompletion.create(
-        model="gpt-4o-mini", messages=[{"role":"user","content":prompt}]
+        model="gpt-4o-mini",
+        messages=[{"role":"user","content":prompt}]
     )
     val = resp2.choices[0].message.content
-    c.execute("INSERT INTO links VALUES (?,?,?)", (1, url, val))
-    conn.commit()
+    supabase.table("links").insert({
+        "user_id": 1,
+        "url": url,
+        "relevancia": val
+    }).execute()
     st.write("**Resultado de relevância:**", val)
