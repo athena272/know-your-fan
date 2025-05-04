@@ -76,3 +76,19 @@ know-your-fan/
 └── .devcontainer/
     └── devcontainer.json       # (opcional) suporte para VS Code Containers
 ```
+
+## ☁️ Deploy gratuito
+Este projeto está hospedado gratuitamente com [Streamlit Community Cloud.](https://streamlit.io/cloud)
+
+Para publicar o seu:
+Faça push deste projeto para o GitHub:
+- Acesse Streamlit Cloud
+- Clique em “New app” e selecione seu repositório
+- Vá em Settings > Secrets e adicione as chaves como no secrets.toml
+
+## 👨‍💻 Autor
+Desenvolvido por Guilherme como parte de um desafio técnico de integração de IA com coleta de dados no universo de eSports.
+
+## 📌 Observações
+- O Supabase requer que você crie previamente as tabelas user, docs, social e links no painel do banco.
+- O service_role deve ser usado com cuidado e nunca exposto publicamente fora do servidor/secrets.toml.
