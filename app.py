@@ -14,7 +14,7 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]  # use aqui a service_role key
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-st.title("Know Your Fan — Protótipo Mínimo Viável")
+st.title("Know Your Fan")
 
 # --- 1. COLETA DE DADOS BÁSICOS ---
 with st.form("dados_basicos"):
