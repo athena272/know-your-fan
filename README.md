@@ -52,3 +52,27 @@ SUPABASE_KEY = "COLOQUE_SUA_CHAVE_AQUI"
 ```bash
 streamlit run app.py
 ```
+
+## 🧠 Tecnologias utilizadas
+| Tecnologia           | Finalidade                           |
+| -------------------- | ------------------------------------ |
+| Streamlit            | Interface web                        |
+| OpenAI GPT           | Validação de documentos e perfis     |
+| Tesseract OCR        | Extração de texto de documentos      |
+| Tweepy (Twitter API) | Coleta de interações sociais         |
+| Supabase             | Banco de dados em nuvem (PostgreSQL) |
+| BeautifulSoup        | Extração de texto de páginas HTML    |
+
+## 📁 Estrutura do Projeto
+```
+know-your-fan/
+├── app.py                      # Código principal da aplicação
+├── requirements.txt            # Lista de dependências
+├── README.md                   # Este arquivo
+├── .gitignore
+├── LICENSE
+├── .streamlit/
+│   └── secrets.example.toml    # Exemplo de arquivo de configuração
+└── .devcontainer/
+    └── devcontainer.json       # (opcional) suporte para VS Code Containers
+```
