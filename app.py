@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS links (
 )""")
 conn.commit()
 
-st.title("Know Your Fan — Protótipo Mínimo Viável")
+st.title("Know Your Fan")
 
 # --- 1. COLETA DE DADOS BÁSICOS ---
 with st.form("dados_basicos"):
