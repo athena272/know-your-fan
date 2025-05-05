@@ -33,14 +33,6 @@ with st.form("dados_basicos"):
     compras_eventos = st.text_area("Compras e eventos que participou (último ano)")
     ok = st.form_submit_button("Salvar dados")
     if ok:
-        # Teste rápido de leitura
-        try:
-            test = supabase.table("user").select("id").limit(1).execute()
-            st.write("✅ Conexão OK. Exemplos de user_id:", test.data)
-        except Exception as e:
-            st.error(f"❌ Falha ao ler do Supabase: {e}")
-            st.stop()
-
         res = supabase.table("user").insert({
             "nome": nome,
             "cpf": cpf,
