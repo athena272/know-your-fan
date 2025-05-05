@@ -40,7 +40,6 @@ with st.form("dados_basicos"):
         except Exception as e:
             st.error(f"❌ Falha ao ler do Supabase: {e}")
             st.stop()
-
         res = supabase.table("user").insert({
             "nome": nome,
             "cpf": cpf,
@@ -48,10 +47,12 @@ with st.form("dados_basicos"):
             "interesses": interesses,
             "compras_eventos": compras_eventos
         }).execute()
-        if res.error:
-            st.error("Erro ao salvar dados: " + res.error.message)
-        else:
+        if res.data:
             st.success("Dados salvos no Supabase!")
+            st.session_state["user_id"] = res.data[0]["id"]
+            st.write(f"ID do usuário salvo: {res.data[0]['id']}")
+        else:
+            st.error("Erro ao salvar dados no Supabase.")
 
 # --- 2. UPLOAD E VALIDAÇÃO DE DOCUMENTO ---
 st.header("Validação de Identidade")
@@ -71,7 +72,7 @@ if doc:
     )
     resultado = resp.choices[0].message.content
     supabase.table("docs").insert({
-        "user_id": 1,
+        "user_id": st.session_state.get("user_id", 1),
         "tipo": "rg",
         "resultado": resultado
     }).execute()
@@ -87,7 +88,7 @@ if st.button("Buscar tweets"):
         tweets = client.get_users_tweets(id=user.data.id, max_results=50)
         relevantes = [t.text for t in tweets.data if "FURIA" in t.text.upper()]
         supabase.table("social").insert({
-            "user_id": 1,
+            "user_id": st.session_state.get("user_id", 1),
             "plataforma": "twitter",
             "dados": "\n".join(relevantes)
         }).execute()
@@ -115,7 +116,7 @@ if st.button("Validar link"):
         val = resp2.choices[0].message.content
 
         supabase.table("links").insert({
-            "user_id": 1,
+            "user_id": st.session_state.get("user_id", 1),
             "url": url,
             "relevancia": val
         }).execute()
