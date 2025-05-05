@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from supabase import create_client
 import pytesseract
@@ -59,6 +60,8 @@ st.header("Validação de Identidade")
 doc = st.file_uploader("Envie foto do RG/CNH", type=["png","jpg","jpeg"])
 if doc:
     img = Image.open(doc)
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    os.environ["TESSDATA_PREFIX"] = r"C:\Program Files\Tesseract-OCR"
     text = pytesseract.image_to_string(img, lang="por")
     prompt = (
         f"Extraí este texto de um documento de identidade:\n\n"
