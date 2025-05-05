@@ -7,11 +7,19 @@ import requests
 from bs4 import BeautifulSoup
 import tweepy
 
+# Tenta importar RateLimitError; se não existir, define um stub
+try:
+    from openai.error import RateLimitError
+except ImportError:
+    class RateLimitError(Exception):
+        """Stub para RateLimitError da OpenAI."""
+        pass
+
 # --- CONFIGURAÇÕES INICIAIS ---
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]  # use aqui a service_role key
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]  # service_role key
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.title("Know Your Fan")
@@ -49,9 +57,9 @@ if doc:
         f"Compare com nome={nome!r} e cpf={cpf!r}. "
         "Responda sucintamente se os dados batem e, se não, quais divergências."
     )
-    resp = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[{"role":"user","content":prompt}]
+    resp = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
     )
     resultado = resp.choices[0].message.content
     supabase.table("docs").insert({
@@ -81,24 +89,32 @@ if st.button("Buscar tweets"):
 
 # --- 4. VALIDAÇÃO DE LINKS DE SITES DE E-SPORTS ---
 st.header("Perfis em Sites de e-sports")
-url = st.text_input("Cole aqui o link do seu perfil (ex: liquipedia.net/…)") 
+url = st.text_input("Cole aqui o link do seu perfil (ex: liquipedia.net/…)")
 if st.button("Validar link"):
     r = requests.get(url)
     soup = BeautifulSoup(r.text, "html.parser")
-    texto = soup.get_text(separator="\n")[:2000]
+    texto = soup.get_text(separator="\n")[:500]
     prompt = (
         "Esse texto extraído do perfil pertence a um fã de esports "
         f"e corresponde a {nome!r}? Responda sim/não e explique brevemente."
         f"\n\n---\n{texto}"
     )
-    resp2 = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[{"role":"user","content":prompt}]
-    )
-    val = resp2.choices[0].message.content
-    supabase.table("links").insert({
-        "user_id": 1,
-        "url": url,
-        "relevancia": val
-    }).execute()
-    st.write("**Resultado de relevância:**", val)
+    try:
+        resp2 = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        val = resp2.choices[0].message.content
+
+        supabase.table("links").insert({
+            "user_id": 1,
+            "url": url,
+            "relevancia": val
+        }).execute()
+        st.write("**Resultado de relevância:**", val)
+
+    except RateLimitError:
+        st.error("Ops! Limite de requisições ou cota excedida. Tente novamente mais tarde.")
+
+    except Exception as e:
+        st.error(f"Erro ao validar link: {e}")
