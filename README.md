@@ -53,6 +53,21 @@ SUPABASE_KEY = "COLOQUE_SUA_CHAVE_AQUI"
 streamlit run app.py
 ```
 
+## ⚙️ Requisitos adicionais
+Para que a funcionalidade de validação de identidade via OCR funcione corretamente, é necessário:
+### 1 Instalar o Tesseract OCR
+Você pode baixar a versão mais recente aqui:
+👉 https://github.com/tesseract-ocr/tesseract/releases
+### 2 Adicionar o Tesseract ao PATH
+Após a instalação, adicione este caminho às variáveis de ambiente do sistema (no Windows):
+```
+C:\Program Files\Tesseract-OCR
+```
+### 3 Baixar o idioma português (por.traineddata):
+Se não estiver incluso por padrão, baixe o arquivo por.traineddata daqui: 👉 https://github.com/tesseract-ocr/tessdata/blob/main/por.traineddata
+
+E coloque-o dentro do diretório tessdata.
+
 ## 🧠 Tecnologias utilizadas
 | Tecnologia           | Finalidade                           |
 | -------------------- | ------------------------------------ |
